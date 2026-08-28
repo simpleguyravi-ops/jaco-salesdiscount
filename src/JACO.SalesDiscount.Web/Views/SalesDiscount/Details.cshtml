@@ -1,0 +1,180 @@
+@model JACO.SalesDiscount.Web.Models.SalesDiscountRequest
+@{
+    ViewData["Title"] = Model.RequestNumber;
+    var timeline = ViewBag.Timeline as List<JACO.SalesDiscount.Web.Services.TimelineLevel>;
+    string CrStatusClass(string status) => status switch
+    {
+        "Draft" => "jaco-badge jaco-badge-neutral",
+        "Pending Approval" => "jaco-badge jaco-badge-warning",
+        "Completed" => "jaco-badge jaco-badge-success",
+        "Rejected" => "jaco-badge jaco-badge-danger",
+        "Sent Back" => "jaco-badge jaco-badge-danger",
+        "Withdrawn" => "jaco-badge jaco-badge-neutral",
+        _ => "jaco-badge jaco-badge-neutral"
+    };
+    string ApprovalStatusClass(string? status) => status switch
+    {
+        "Pending" => "jaco-badge jaco-badge-warning",
+        "Approved" => "jaco-badge jaco-badge-success",
+        "Rejected" => "jaco-badge jaco-badge-danger",
+        "Sent Back" => "jaco-badge jaco-badge-danger",
+        _ => "jaco-badge jaco-badge-neutral"
+    };
+}
+<a class="jaco-back-link" href="/SalesDiscount">&larr; Back to list</a>
+<div class="page-head">
+    <div>
+        <span class="eyebrow">REQUEST @Model.RequestNumber</span>
+        <h1>@Model.VehicleModel — @Model.CustomerName</h1>
+        <p>@Model.Branch &middot; @Model.RequestedDiscountPercent.ToString("0.##")% requested &middot; Created by @Model.CreatorUserName</p>
+    </div>
+    <div style="display:flex;gap:8px;">
+        @if ((Model.Status == "Draft" || Model.Status == "Sent Back") && Model.CreatorUserName == User.Identity!.Name)
+        {
+            <a class="jaco-btn jaco-btn-outline" href="/SalesDiscount/Edit/@Model.Id">Edit</a>
+        }
+        @if (Model.Status == "Pending Approval" && Model.CreatorUserName == User.Identity!.Name)
+        {
+            <form method="post" action="/SalesDiscount/Withdraw" onsubmit="return confirm('Withdraw this request? The approval workflow will be cancelled.');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button class="jaco-btn jaco-btn-outline" type="submit">Withdraw</button>
+            </form>
+        }
+    </div>
+</div>
+
+<section class="status-panel">
+    <div><span class="eyebrow">STATUS</span><span class="@CrStatusClass(Model.Status)">@Model.Status</span></div>
+    <div><span class="eyebrow">APPROVAL STATUS</span><span class="@ApprovalStatusClass(Model.ApprovalStatus)">@(Model.ApprovalStatus ?? "Not Submitted")</span></div>
+    <div><span class="eyebrow">CURRENT LEVEL</span><strong>@(Model.ApprovalCurrentLevel?.ToString() ?? "-")@(timeline is not null ? $" of {timeline.Count}" : "")</strong></div>
+</section>
+
+<div class="details-grid">
+    <div>
+        <section class="panel">
+            <h2>Request Details</h2>
+            <div class="grid2">
+                <div><b>Branch</b><p>@Model.Branch</p></div>
+                <div><b>Company</b><p>@Model.Company</p></div>
+                <div><b>Customer</b><p>@Model.CustomerName</p></div>
+                <div><b>Discount Reason</b><p>@(Model.DiscountReason ?? "—")</p></div>
+                <div><b>Vehicle Model</b><p>@Model.VehicleModel</p></div>
+                <div><b>Model Year</b><p>@(Model.ModelYear?.ToString() ?? "—")</p></div>
+                <div><b>VIN</b><p>@(Model.Vin ?? "—")</p></div>
+                <div><b>Sales Channel</b><p>@Model.SalesChannel</p></div>
+                <div><b>Order Type</b><p>@Model.OrderType</p></div>
+                <div><b>Special Order</b><p>@(Model.SpecialOrder ?? "—")</p></div>
+                <div><b>Requested Discount %</b><p>@Model.RequestedDiscountPercent.ToString("0.##")%</p></div>
+                <div><b>Requested Discount Amount</b><p>@(Model.RequestedDiscountAmount?.ToString("N2") ?? "—")</p></div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.DiscountNotes))
+            {
+                <h3>Notes</h3>
+                <p>@Model.DiscountNotes</p>
+            }
+        </section>
+
+        <section class="panel">
+            <h2>Attachments</h2>
+            <form method="post" action="/SalesDiscount/UploadAttachment" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="actions">
+                    <input class="input" type="file" name="file" required />
+                    <button class="btn">Upload</button>
+                </div>
+            </form>
+
+            @if (ViewBag.Attachments is IEnumerable<JACO.SalesDiscount.Web.Models.SalesDiscountAttachment> attachments)
+            {
+                <table>
+                    <thead><tr><th>Document</th><th>Size</th><th>Uploaded</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                    @foreach (var file in attachments)
+                    {
+                        <tr>
+                            <td>@file.OriginalFileName</td>
+                            <td>@($"{file.FileSize / 1024.0:0.0} KB")</td>
+                            <td>@file.UploadedAt.ToString("dd-MMM-yyyy HH:mm")</td>
+                            <td><span class="status">@file.TransferStatus</span></td>
+                            <td>
+                                <a class="link" href="/SalesDiscount/DownloadAttachment/@file.Id">Download</a>
+                                @if (!string.IsNullOrWhiteSpace(Model.ApprovalWorkflowNo) && file.TransferStatus != "Transferred")
+                                {
+                                    <form method="post" action="/SalesDiscount/RetryAttachmentTransfer" style="display:inline-block;margin-left:8px">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@file.Id" />
+                                        <button class="btn" type="submit">Retry Transfer</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+        </section>
+    </div>
+
+    <div>
+        <section class="panel">
+            <h2>Approval Progress</h2>
+            @if (string.IsNullOrWhiteSpace(Model.ApprovalWorkflowNo))
+            {
+                <p style="color:#65727d;font-size:13px;">Not yet submitted.</p>
+                <form method="post" action="/SalesDiscount/Submit">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    @Html.AntiForgeryToken()
+                    <button class="btn primary">Submit</button>
+                </form>
+            }
+            else if (timeline is not null && timeline.Count > 0)
+            {
+                <p style="color:#65727d;font-size:12px;margin-top:-8px;">@Model.ApprovalWorkflowNo</p>
+                <div class="timeline-vertical">
+                    @foreach (var level in timeline)
+                    {
+                        var stepClass = level.LevelStatus switch { "Approved" => "completed", "ActionRequired" => "current", "Rejected" => "rejected", "SentBack" => "sentback", _ => "" };
+                        var statusLabel = level.LevelStatus switch { "Approved" => "Approved", "ActionRequired" => "Action Required", "Rejected" => "Rejected", "SentBack" => "Sent Back", _ => "Not Started" };
+                        var statusBadge = level.LevelStatus switch { "Approved" => "jaco-badge-success", "ActionRequired" => "jaco-badge-warning", "Rejected" => "jaco-badge-danger", "SentBack" => "jaco-badge-danger", _ => "jaco-badge-neutral" };
+                        <div class="timeline-step-v @stepClass">
+                            <div class="timeline-v-dot"></div>
+                            <div class="timeline-v-body">
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <strong style="font-size:13px;">Level @level.LevelNo</strong>
+                                    <span class="jaco-badge @statusBadge">@statusLabel</span>
+                                </div>
+                                <div class="timeline-meta">@string.Join(", ", level.ApproverNames)</div>
+                                @foreach (var d in level.Decisions)
+                                {
+                                    <div class="timeline-note">
+                                        <strong>@d.ActorName</strong> &middot; @d.AtUtc.ToString("dd MMM yyyy HH:mm")
+                                        @if (!string.IsNullOrWhiteSpace(d.Comments))
+                                        {
+                                            <div>&ldquo;@d.Comments&rdquo;</div>
+                                        }
+                                    </div>
+                                }
+                                @if (level.LevelStatus == "NotStarted")
+                                {
+                                    <div class="timeline-note">Will be notified after the previous level is completed.</div>
+                                }
+                                else if (level.LevelStatus == "ActionRequired")
+                                {
+                                    <div class="timeline-note">Waiting for your decision.</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p><b>Workflow:</b> @Model.ApprovalWorkflowNo</p>
+                <p style="color:#65727d;">Approval progress detail is temporarily unavailable.</p>
+            }
+        </section>
+    </div>
+</div>

@@ -1,0 +1,60 @@
+@using JACO.SalesDiscount.Web.Models
+@model IReadOnlyList<Branch>
+@{ ViewData["Title"] = "Branches"; }
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">ADMINISTRATION</span>
+        <h1>Branches</h1>
+        <p>Each branch's company and account-team email drive the request form's Branch dropdown, the routing matrix's Branch/Company criteria, and where the completion email is sent. <a class="link" href="/Admin">Back to Lookups</a></p>
+    </div>
+</div>
+
+<section class="panel">
+    <h2>Add Branch</h2>
+    <form method="post" action="/Admin/AddBranch" class="grid4">
+        @Html.AntiForgeryToken()
+        <label>Code <input class="input" name="code" required /></label>
+        <label>Name <input class="input" name="name" required /></label>
+        <label>Company Code <input class="input" name="companyCode" /></label>
+        <label>Company Name <input class="input" name="companyName" /></label>
+        <label>Account Email <input class="input" name="accountEmail" type="email" /></label>
+        <div class="form-action"><button class="btn primary">Add Branch</button></div>
+    </form>
+</section>
+
+<section class="panel">
+    <h2>Branches</h2>
+    <table>
+        <thead><tr><th>Code</th><th>Name</th><th>Company</th><th>Account Email</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var b in Model)
+        {
+            <tr>
+                <td>@b.Code</td>
+                <td>
+                    <form method="post" action="/Admin/UpdateBranch" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@b.Id" />
+                        <input class="input compact" name="name" value="@b.Name" />
+                        <input class="input compact" name="companyCode" value="@b.CompanyCode" placeholder="Company Code" />
+                        <input class="input compact" name="companyName" value="@b.CompanyName" placeholder="Company Name" />
+                        <input class="input compact" name="accountEmail" value="@b.AccountEmail" type="email" placeholder="Account Email" />
+                        <button class="btn">Save</button>
+                    </form>
+                </td>
+                <td>@b.CompanyName</td>
+                <td>@(b.AccountEmail ?? "&mdash;")</td>
+                <td><span class="status @(b.Active ? "active" : "inactive")">@(b.Active ? "Active" : "Inactive")</span></td>
+                <td>
+                    <form method="post" action="/Admin/ToggleBranch">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@b.Id" />
+                        <button class="btn">@(b.Active ? "Deactivate" : "Activate")</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</section>

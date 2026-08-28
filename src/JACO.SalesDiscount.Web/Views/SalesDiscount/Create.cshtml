@@ -1,0 +1,284 @@
+@using JACO.SalesDiscount.Web.Models
+@model JACO.SalesDiscount.Web.Models.SalesDiscountRequest
+@{
+    var isEdit = Model.Id != 0;
+    var requestNumber = ViewBag.RequestNumber as string ?? Model.RequestNumber;
+    var isSentBack = Model.Status == "Sent Back";
+    var existingAttachments = ViewBag.Attachments as IEnumerable<SalesDiscountAttachment>;
+    var sentBackComment = ViewBag.SentBackComment as string;
+    var branches = (IReadOnlyList<Branch>)ViewBag.Branches;
+    var discountReasons = (IReadOnlyList<SalesDiscountLookupValue>)ViewBag.DiscountReasons;
+    var salesChannels = (IReadOnlyList<SalesDiscountLookupValue>)ViewBag.SalesChannels;
+    var orderTypes = (IReadOnlyList<SalesDiscountLookupValue>)ViewBag.OrderTypes;
+    ViewData["Title"] = isEdit ? "Edit Sales Discount Request" : "New Sales Discount Request";
+}
+@if (isEdit)
+{
+    <a class="jaco-back-link" href="/SalesDiscount/Details/@Model.Id">&larr; Back to @requestNumber</a>
+}
+<div class="page-head">
+    <div>
+        <span class="eyebrow">SALES DISCOUNT</span>
+        <h1>@(isEdit ? $"Edit {requestNumber} ({Model.Status})" : "New Sales Discount Request")</h1>
+        <p>Enter the customer, vehicle and pricing details required for discount approval.</p>
+    </div>
+</div>
+
+@if (isSentBack)
+{
+    <section class="panel" style="border-left:4px solid var(--jaco-danger, #d9534f);">
+        <h2 style="font-size:14px;">Sent Back by Approver</h2>
+        <p style="margin:0;">This request was sent back for more information. Update the details below and resubmit &mdash; it will go back to the same approver on the same approval item.</p>
+        @if (!string.IsNullOrWhiteSpace(sentBackComment))
+        {
+            <p style="margin:8px 0 0;"><b>Approver's comment:</b> &ldquo;@sentBackComment&rdquo;</p>
+        }
+    </section>
+}
+
+<form method="post" action="@(isEdit ? $"/SalesDiscount/Edit/{Model.Id}" : "/SalesDiscount/Create")" enctype="multipart/form-data">
+    <input type="hidden" asp-for="Id" />
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div asp-validation-summary="All" class="validation-summary"></div>
+    }
+    @Html.AntiForgeryToken()
+
+    <section class="panel">
+        <h2 style="font-size:14px;">1. Customer &amp; Vehicle</h2>
+        <div class="grid4-even">
+            <label>
+                Branch
+                <select class="input" asp-for="Branch" required>
+                    <option value="">Select Branch</option>
+                    @foreach (var b in branches)
+                    {
+                        <option value="@b.Name" selected="@(b.Name == Model.Branch)">@b.Name (@b.CompanyName)</option>
+                    }
+                </select>
+                <span asp-validation-for="Branch" class="field-error"></span>
+            </label>
+            <label>
+                Customer Name
+                <input class="input" asp-for="CustomerName" required placeholder="Customer name" />
+                <span asp-validation-for="CustomerName" class="field-error"></span>
+            </label>
+            <label>
+                Discount Reason
+                <select class="input" asp-for="DiscountReason">
+                    <option value="">Select Reason</option>
+                    @foreach (var item in discountReasons)
+                    {
+                        <option value="@item.Value" selected="@(item.Value == Model.DiscountReason)">@item.DisplayText</option>
+                    }
+                </select>
+            </label>
+            <label>
+                Sales Channel
+                <select class="input" asp-for="SalesChannel" required>
+                    <option value="">Select Channel</option>
+                    @foreach (var item in salesChannels)
+                    {
+                        <option value="@item.Value" selected="@(item.Value == Model.SalesChannel)">@item.DisplayText</option>
+                    }
+                </select>
+                <span asp-validation-for="SalesChannel" class="field-error"></span>
+            </label>
+        </div>
+
+        <div class="grid4-even">
+            <label>
+                Vehicle Model
+                <input class="input" asp-for="VehicleModel" required placeholder="e.g. S 580" />
+                <span asp-validation-for="VehicleModel" class="field-error"></span>
+            </label>
+            <label>
+                Model Year
+                <input class="input" asp-for="ModelYear" type="number" />
+            </label>
+            <label>
+                Commission No. / Baumuster
+                <input class="input" asp-for="CommissionNumber" />
+            </label>
+            <label>
+                Chassis No. / VIN
+                <input class="input" asp-for="Vin" />
+            </label>
+        </div>
+
+        <div class="grid4-even">
+            <label>
+                Order Type
+                <select class="input" asp-for="OrderType" required>
+                    <option value="">Select Order Type</option>
+                    @foreach (var item in orderTypes)
+                    {
+                        <option value="@item.Value" selected="@(item.Value == Model.OrderType)">@item.DisplayText</option>
+                    }
+                </select>
+                <span asp-validation-for="OrderType" class="field-error"></span>
+            </label>
+            <label>
+                Special Order
+                <select class="input" asp-for="SpecialOrder">
+                    <option value="">--</option>
+                    <option value="Yes" selected="@(Model.SpecialOrder == "Yes")">Yes</option>
+                    <option value="No" selected="@(Model.SpecialOrder == "No")">No</option>
+                </select>
+            </label>
+            <label>
+                Days in Stock
+                <input class="input" asp-for="DaysInStock" type="number" />
+            </label>
+            <label>
+                Days Reserved
+                <input class="input" asp-for="DaysReserved" type="number" />
+            </label>
+        </div>
+
+        <label>
+            Notes
+            <textarea class="input" asp-for="DiscountNotes" rows="3" placeholder="Any additional context for the approver."></textarea>
+        </label>
+    </section>
+
+    <section class="panel">
+        <h2 style="font-size:14px;">2. Pricing &amp; Discount</h2>
+        <div class="grid4-even">
+            <label>
+                Selling Price
+                <input class="input" asp-for="SellingPrice" type="number" step="0.01" />
+            </label>
+            <label>
+                Cost Price
+                <input class="input" asp-for="CostPrice" type="number" step="0.01" />
+            </label>
+            <label>
+                Requested Discount %
+                <input class="input" asp-for="RequestedDiscountPercent" type="number" step="0.01" required />
+                <span asp-validation-for="RequestedDiscountPercent" class="field-error"></span>
+            </label>
+            <label>
+                Requested Discount Amount
+                <input class="input" asp-for="RequestedDiscountAmount" type="number" step="0.01" />
+            </label>
+        </div>
+        <div class="grid4-even">
+            <label>
+                Customer Final Offer
+                <input class="input" asp-for="CustomerFinalOffer" type="number" step="0.01" />
+            </label>
+            <label>
+                Balance Net Margin %
+                <input class="input" asp-for="NetMargin" type="number" step="0.01" />
+            </label>
+        </div>
+        <p class="helper" style="margin-top:6px;">Cost Price and Net Margin are shown to approvers but hidden from your own view of this request once submitted.</p>
+    </section>
+
+    <section class="panel">
+        <h2 style="font-size:14px;">3. Attachments</h2>
+        @if (isEdit && existingAttachments is not null && existingAttachments.Any())
+        {
+            <p class="helper" style="margin-top:0;">Already uploaded:</p>
+            <table style="margin-bottom:14px;">
+                <thead><tr><th>Document</th><th>Size</th><th>Uploaded</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var file in existingAttachments)
+                {
+                    <tr>
+                        <td>@file.OriginalFileName</td>
+                        <td>@($"{file.FileSize / 1024.0:0.0} KB")</td>
+                        <td>@file.UploadedAt.ToString("dd-MMM-yyyy HH:mm")</td>
+                        <td><a class="link" href="/SalesDiscount/DownloadAttachment/@file.Id">Download</a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+        <label class="dropzone">
+            <input type="file" id="attachmentsInput" name="attachments" style="display:none;" multiple />
+            <div class="dropzone-icon">&#8681;</div>
+            <div class="dropzone-text" id="dropzoneText">Drag and drop files here or <span class="link">click to browse</span></div>
+            <span class="helper" style="margin-top:6px;">Maximum 10 files, 10 MB each. Files are transferred to the Approval work item when the request is submitted. Pick files again (even from a different folder) to add more &mdash; nothing already selected is lost.</span>
+        </label>
+        <ul id="selectedFilesList" style="list-style:none;padding:0;margin:10px 0 0;"></ul>
+    </section>
+
+    @if (isSentBack)
+    {
+        <section class="panel">
+            <h2 style="font-size:14px;">4. Response to Approver</h2>
+            <label>
+                Clarification (optional)
+                <textarea class="input" name="clarification" rows="3" placeholder="Explain what changed, if it helps the approver's review."></textarea>
+            </label>
+        </section>
+    }
+
+    <div class="actions">
+        <button class="btn primary" type="submit">@(isSentBack ? "Resubmit for Approval" : "Save")</button>
+        <a class="btn" href="/SalesDiscount">Cancel</a>
+    </div>
+</form>
+
+<script>
+(function () {
+    var input = document.getElementById('attachmentsInput');
+    var dropzoneText = document.getElementById('dropzoneText');
+    var list = document.getElementById('selectedFilesList');
+    var files = [];
+
+    function fileKey(f) { return f.name + '|' + f.size + '|' + f.lastModified; }
+
+    function render() {
+        var dt = new DataTransfer();
+        files.forEach(function (f) { dt.items.add(f); });
+        input.files = dt.files;
+
+        dropzoneText.textContent = '';
+        if (files.length) {
+            dropzoneText.appendChild(document.createTextNode(files.length + ' file(s) selected. '));
+            var addMore = document.createElement('span');
+            addMore.className = 'link';
+            addMore.textContent = 'Add more';
+            dropzoneText.appendChild(addMore);
+        } else {
+            dropzoneText.appendChild(document.createTextNode('Drag and drop files here or '));
+            var browse = document.createElement('span');
+            browse.className = 'link';
+            browse.textContent = 'click to browse';
+            dropzoneText.appendChild(browse);
+        }
+
+        list.innerHTML = '';
+        files.forEach(function (f, i) {
+            var li = document.createElement('li');
+            li.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;border-bottom:1px solid var(--jaco-border);';
+            var name = document.createElement('span');
+            name.textContent = f.name + ' (' + (f.size / 1024).toFixed(1) + ' KB)';
+            var remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'link';
+            remove.style.cssText = 'background:none;border:none;cursor:pointer;padding:0;';
+            remove.textContent = 'Remove';
+            remove.addEventListener('click', function () {
+                files.splice(i, 1);
+                render();
+            });
+            li.appendChild(name);
+            li.appendChild(remove);
+            list.appendChild(li);
+        });
+    }
+
+    input.addEventListener('change', function () {
+        Array.from(input.files).forEach(function (f) {
+            if (!files.some(function (existing) { return fileKey(existing) === fileKey(f); })) {
+                files.push(f);
+            }
+        });
+        render();
+    });
+})();
+</script>

@@ -1,0 +1,110 @@
+@model JACO.SalesDiscount.Web.Models.SalesDiscountListViewModel
+@{
+    ViewData["Title"] = "Sales Discount Requests";
+    string StatusClass(string status) => status switch
+    {
+        "Draft" => "status draft",
+        "Pending Approval" => "status pending",
+        "Completed" => "status completed",
+        "Rejected" => "status rejected",
+        "Sent Back" => "status sentback",
+        "Withdrawn" => "status inactive",
+        _ => "status"
+    };
+
+    string SortUrl(string field)
+    {
+        var dir = Model.Sort == field && Model.Dir == "asc" ? "desc" : "asc";
+        var qs = new List<string>();
+        if (!string.IsNullOrWhiteSpace(Model.Search)) qs.Add($"search={Uri.EscapeDataString(Model.Search)}");
+        if (!string.IsNullOrWhiteSpace(Model.Status)) qs.Add($"status={Uri.EscapeDataString(Model.Status)}");
+        if (!string.IsNullOrWhiteSpace(Model.Branch)) qs.Add($"branch={Uri.EscapeDataString(Model.Branch)}");
+        qs.Add($"sort={field}");
+        qs.Add($"dir={dir}");
+        return "/SalesDiscount?" + string.Join("&", qs);
+    }
+    string SortArrow(string field) => Model.Sort != field ? "" : (Model.Dir == "asc" ? " &#9650;" : " &#9660;");
+}
+
+<div class="jaco-page-header">
+    <div>
+        <h1>Sales Discount Requests</h1>
+        <p>Create, track and manage your additional-discount approval requests.</p>
+    </div>
+    <a class="jaco-btn jaco-btn-primary" href="/SalesDiscount/Create">+ New Request</a>
+</div>
+
+<div class="jaco-stat-grid">
+    <div class="jaco-card jaco-stat-card">
+        <div class="jaco-stat-icon" style="background:var(--jaco-info-bg);color:var(--jaco-info);"><span class="jaco-icon jaco-icon-docs"></span></div>
+        <div><div class="jaco-stat-value">@Model.TotalCount</div><div class="jaco-stat-label">Total</div></div>
+    </div>
+    <div class="jaco-card jaco-stat-card">
+        <div class="jaco-stat-icon" style="background:#eef0f3;color:var(--jaco-text-muted);"><span class="jaco-icon jaco-icon-edit"></span></div>
+        <div><div class="jaco-stat-value">@Model.DraftCount</div><div class="jaco-stat-label">Draft</div></div>
+    </div>
+    <div class="jaco-card jaco-stat-card">
+        <div class="jaco-stat-icon" style="background:var(--jaco-warning-bg);color:var(--jaco-warning);"><span class="jaco-icon jaco-icon-clock"></span></div>
+        <div><div class="jaco-stat-value">@Model.PendingApprovalCount</div><div class="jaco-stat-label">Pending Approval</div></div>
+    </div>
+    <div class="jaco-card jaco-stat-card">
+        <div class="jaco-stat-icon" style="background:var(--jaco-success-bg);color:var(--jaco-success);"><span class="jaco-icon jaco-icon-check-circle"></span></div>
+        <div><div class="jaco-stat-value">@Model.CompletedCount</div><div class="jaco-stat-label">Completed</div></div>
+    </div>
+</div>
+
+<form method="get" action="/SalesDiscount" style="display:flex;gap:12px;margin-bottom:14px;align-items:center;">
+    <input type="text" name="search" value="@Model.Search" class="jaco-input" style="margin:0;max-width:340px;" placeholder="Search by request no., customer, model&hellip;" />
+    <select name="branch" class="jaco-select" style="width:auto;margin:0;" onchange="this.form.submit()">
+        <option value="">All Branches</option>
+        @foreach (var b in Model.Branches)
+        {
+            <option value="@b.Name" selected="@(Model.Branch == b.Name)">@b.Name</option>
+        }
+    </select>
+    <input type="hidden" name="status" value="@Model.Status" />
+    <button type="submit" class="jaco-btn jaco-btn-outline">Search</button>
+</form>
+
+<div class="lookup-tabs" style="margin-bottom:16px;">
+    @foreach (var (value, label) in JACO.SalesDiscount.Web.Models.SalesDiscountListViewModel.StatusTabs)
+    {
+        <a class="lookup-tab @(Model.Status == value ? "selected" : "")"
+           href="/SalesDiscount?status=@value&branch=@Model.Branch&search=@Model.Search">@label</a>
+    }
+</div>
+
+<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+    <a class="jaco-btn jaco-btn-outline jaco-btn-sm" href="/SalesDiscount/Export?status=@Model.Status&branch=@Model.Branch&search=@Model.Search">Download CSV</a>
+</div>
+<div class="jaco-card">
+    <table class="jaco-table">
+        <thead><tr>
+            <th><a class="link" href="@SortUrl("RequestNumber")">Request No.@(Html.Raw(SortArrow("RequestNumber")))</a></th>
+            <th><a class="link" href="@SortUrl("Branch")">Branch@(Html.Raw(SortArrow("Branch")))</a></th>
+            <th><a class="link" href="@SortUrl("CustomerName")">Customer@(Html.Raw(SortArrow("CustomerName")))</a></th>
+            <th>Vehicle Model</th>
+            <th><a class="link" href="@SortUrl("RequestedDiscountPercent")">Discount %@(Html.Raw(SortArrow("RequestedDiscountPercent")))</a></th>
+            <th><a class="link" href="@SortUrl("Status")">Status@(Html.Raw(SortArrow("Status")))</a></th>
+            <th><a class="link" href="@SortUrl("CreatedAt")">Submitted On@(Html.Raw(SortArrow("CreatedAt")))</a></th>
+        </tr></thead>
+        <tbody>
+        @foreach (var x in Model.Rows)
+        {
+            <tr>
+                <td><a class="link" href="/SalesDiscount/Details/@x.Id">@x.RequestNumber</a></td>
+                <td>@x.Branch</td>
+                <td>@x.CustomerName</td>
+                <td>@x.VehicleModel</td>
+                <td>@x.RequestedDiscountPercent.ToString("0.##")%</td>
+                <td><span class="@StatusClass(x.Status)">@x.Status</span></td>
+                <td>@x.CreatedAt.ToString("dd MMM yyyy")</td>
+            </tr>
+        }
+        @if (Model.Rows.Count == 0)
+        {
+            <tr><td colspan="7" style="text-align:center;color:var(--jaco-text-muted);">No requests match this filter.</td></tr>
+        }
+        </tbody>
+    </table>
+</div>

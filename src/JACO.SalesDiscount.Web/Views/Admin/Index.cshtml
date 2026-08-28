@@ -1,0 +1,95 @@
+@using JACO.SalesDiscount.Web.Models
+@model IReadOnlyList<SalesDiscountLookupValue>
+@{
+    ViewData["Title"] = "Administration";
+    var lookupTypes = (string[])ViewBag.LookupTypes;
+    var selectedType = (string)ViewBag.SelectedType;
+}
+
+<div class="page-head">
+    <div>
+        <span class="eyebrow">ADMINISTRATION</span>
+        <h1>Sales Discount Configuration</h1>
+        <p>Maintain the controlled values available to Sales Discount requesters. <a class="link" href="/Admin/Branches">Manage Branches &rarr;</a></p>
+    </div>
+</div>
+
+<section class="panel">
+    <h2>Lookup Type</h2>
+    <div class="lookup-tabs">
+        @foreach (var type in lookupTypes)
+        {
+            <a class="lookup-tab @(string.Equals(type, selectedType, StringComparison.OrdinalIgnoreCase) ? "selected" : "")"
+               href="/Admin?type=@Uri.EscapeDataString(type)">
+                @type
+            </a>
+        }
+    </div>
+</section>
+
+<section class="panel">
+    <h2>Add @selectedType Value</h2>
+    <form method="post" action="/Admin/Add" class="grid4">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="lookupType" value="@selectedType" />
+        <label>Value
+            <input class="input" name="value" placeholder="Internal value" required />
+        </label>
+        <label>Display Text
+            <input class="input" name="displayText" placeholder="User-facing text" required />
+        </label>
+        <label>Sort Order
+            <input class="input" name="sortOrder" type="number" value="10" min="0" />
+        </label>
+        <div class="form-action">
+            <button class="btn primary">Add Value</button>
+        </div>
+    </form>
+</section>
+
+<section class="panel">
+    <h2>@selectedType Values</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Value</th>
+            <th>Display Text</th>
+            <th>Sort</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Value</td>
+                <td>
+                    <form method="post" action="/Admin/Update" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <input class="input compact" name="displayText" value="@item.DisplayText" />
+                        <input class="input compact small" name="sortOrder" type="number" value="@item.SortOrder" />
+                        <button class="btn">Save</button>
+                    </form>
+                </td>
+                <td>@item.SortOrder</td>
+                <td>
+                    <span class="status @(item.Active ? "active" : "inactive")">
+                        @(item.Active ? "Active" : "Inactive")
+                    </span>
+                </td>
+                <td>
+                    <form method="post" action="/Admin/Toggle">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <button class="btn">
+                            @(item.Active ? "Deactivate" : "Activate")
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</section>
