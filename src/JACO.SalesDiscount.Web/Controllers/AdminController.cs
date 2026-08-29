@@ -17,7 +17,7 @@ public sealed class AdminController(SalesDiscountDbContext db) : Controller
     ];
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? type = null)
+    public async Task<IActionResult> Index(string? type = null, string? sort = null, string dir = "asc")
     {
         type ??= "DiscountReason";
 
@@ -25,12 +25,21 @@ public sealed class AdminController(SalesDiscountDbContext db) : Controller
             type = "DiscountReason";
 
         ViewBag.LookupTypes = SupportedTypes;
+        ViewBag.Sort = sort;
+        ViewBag.Dir = dir;
 
-        var values = await db.SalesDiscountLookupValues
-            .Where(x => x.LookupType == type)
-            .OrderBy(x => x.SortOrder)
-            .ThenBy(x => x.DisplayText)
-            .ToListAsync();
+        var query = db.SalesDiscountLookupValues.Where(x => x.LookupType == type).AsQueryable();
+        var desc = dir == "desc";
+        query = sort switch
+        {
+            "Value" => desc ? query.OrderByDescending(x => x.Value) : query.OrderBy(x => x.Value),
+            "DisplayText" => desc ? query.OrderByDescending(x => x.DisplayText) : query.OrderBy(x => x.DisplayText),
+            "Status" => desc ? query.OrderByDescending(x => x.Active) : query.OrderBy(x => x.Active),
+            "SortOrder" => desc ? query.OrderByDescending(x => x.SortOrder) : query.OrderBy(x => x.SortOrder),
+            _ => query.OrderBy(x => x.SortOrder).ThenBy(x => x.DisplayText)
+        };
+
+        var values = await query.ToListAsync();
 
         ViewBag.SelectedType = type;
         return View(values);
@@ -116,9 +125,21 @@ public sealed class AdminController(SalesDiscountDbContext db) : Controller
     // dropdown and as the completion email's resolved recipient. --
 
     [HttpGet]
-    public async Task<IActionResult> Branches()
+    public async Task<IActionResult> Branches(string? sort, string dir = "asc")
     {
-        var branches = await db.Branches.OrderBy(x => x.Name).ToListAsync();
+        ViewBag.Sort = sort;
+        ViewBag.Dir = dir;
+        var desc = dir == "desc";
+        var query = db.Branches.AsQueryable();
+        query = sort switch
+        {
+            "Code" => desc ? query.OrderByDescending(x => x.Code) : query.OrderBy(x => x.Code),
+            "Company" => desc ? query.OrderByDescending(x => x.CompanyName) : query.OrderBy(x => x.CompanyName),
+            "AccountEmail" => desc ? query.OrderByDescending(x => x.AccountEmail) : query.OrderBy(x => x.AccountEmail),
+            "Status" => desc ? query.OrderByDescending(x => x.Active) : query.OrderBy(x => x.Active),
+            _ => query.OrderBy(x => x.Name)
+        };
+        var branches = await query.ToListAsync();
         return View(branches);
     }
 

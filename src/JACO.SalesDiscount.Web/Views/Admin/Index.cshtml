@@ -4,6 +4,14 @@
     ViewData["Title"] = "Administration";
     var lookupTypes = (string[])ViewBag.LookupTypes;
     var selectedType = (string)ViewBag.SelectedType;
+    var sort = (string?)ViewBag.Sort;
+    var dir = (string)ViewBag.Dir;
+    string SortUrl(string field)
+    {
+        var newDir = sort == field && dir == "asc" ? "desc" : "asc";
+        return $"/Admin?type={Uri.EscapeDataString(selectedType)}&sort={field}&dir={newDir}";
+    }
+    string SortArrow(string field) => sort != field ? "" : (dir == "asc" ? " &#9650;" : " &#9660;");
 }
 
 <div class="page-head">
@@ -52,10 +60,10 @@
     <table>
         <thead>
         <tr>
-            <th>Value</th>
-            <th>Display Text</th>
-            <th>Sort</th>
-            <th>Status</th>
+            <th><a href="@SortUrl("Value")">Value@(Html.Raw(SortArrow("Value")))</a></th>
+            <th><a href="@SortUrl("DisplayText")">Display Text@(Html.Raw(SortArrow("DisplayText")))</a></th>
+            <th><a href="@SortUrl("SortOrder")">Sort@(Html.Raw(SortArrow("SortOrder")))</a></th>
+            <th><a href="@SortUrl("Status")">Status@(Html.Raw(SortArrow("Status")))</a></th>
             <th>Action</th>
         </tr>
         </thead>

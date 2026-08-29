@@ -1,6 +1,16 @@
 @using JACO.SalesDiscount.Web.Models
 @model IReadOnlyList<Branch>
-@{ ViewData["Title"] = "Branches"; }
+@{
+    ViewData["Title"] = "Branches";
+    var sort = (string?)ViewBag.Sort;
+    var dir = (string)ViewBag.Dir;
+    string SortUrl(string field)
+    {
+        var newDir = sort == field && dir == "asc" ? "desc" : "asc";
+        return $"/Admin/Branches?sort={field}&dir={newDir}";
+    }
+    string SortArrow(string field) => sort != field ? "" : (dir == "asc" ? " &#9650;" : " &#9660;");
+}
 
 <div class="page-head">
     <div>
@@ -26,7 +36,14 @@
 <section class="panel">
     <h2>Branches</h2>
     <table>
-        <thead><tr><th>Code</th><th>Name</th><th>Company</th><th>Account Email</th><th>Status</th><th></th></tr></thead>
+        <thead><tr>
+            <th><a href="@SortUrl("Code")">Code@(Html.Raw(SortArrow("Code")))</a></th>
+            <th><a href="@SortUrl("Name")">Name@(Html.Raw(SortArrow("Name")))</a></th>
+            <th><a href="@SortUrl("Company")">Company@(Html.Raw(SortArrow("Company")))</a></th>
+            <th><a href="@SortUrl("AccountEmail")">Account Email@(Html.Raw(SortArrow("AccountEmail")))</a></th>
+            <th><a href="@SortUrl("Status")">Status@(Html.Raw(SortArrow("Status")))</a></th>
+            <th></th>
+        </tr></thead>
         <tbody>
         @foreach (var b in Model)
         {
