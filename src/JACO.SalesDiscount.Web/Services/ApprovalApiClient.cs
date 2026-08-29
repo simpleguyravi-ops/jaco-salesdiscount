@@ -20,6 +20,8 @@ public sealed record ApprovalResubmitRequest(
 
 public sealed record ApprovalWithdrawRequest(string CreatorUserName, string Reason);
 
+public sealed record ApprovalNudgeRequest(string CreatorUserName);
+
 public sealed record ApprovalAttachmentResponse(
     long Id,
     string FileName,
@@ -109,6 +111,12 @@ public sealed class ApprovalApiClient(HttpClient http, IConfiguration config)
     public async Task<(bool ok, string message)> WithdrawAsync(string workflowNo, ApprovalWithdrawRequest request, CancellationToken ct = default)
     {
         using var response = await http.PostAsJsonAsync($"{BaseUrl}/api/approvals/{Uri.EscapeDataString(workflowNo)}/withdraw", request, ct);
+        return await ReadOkMessageAsync(response, ct);
+    }
+
+    public async Task<(bool ok, string message)> NudgeAsync(string workflowNo, ApprovalNudgeRequest request, CancellationToken ct = default)
+    {
+        using var response = await http.PostAsJsonAsync($"{BaseUrl}/api/approvals/{Uri.EscapeDataString(workflowNo)}/nudge", request, ct);
         return await ReadOkMessageAsync(response, ct);
     }
 

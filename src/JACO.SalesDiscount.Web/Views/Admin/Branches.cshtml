@@ -44,7 +44,7 @@
                     </form>
                 </td>
                 <td>@b.CompanyName</td>
-                <td>@(b.AccountEmail ?? "&mdash;")</td>
+                <td>@(b.AccountEmail ?? "—")</td>
                 <td><span class="status @(b.Active ? "active" : "inactive")">@(b.Active ? "Active" : "Inactive")</span></td>
                 <td>
                     <form method="post" action="/Admin/ToggleBranch">

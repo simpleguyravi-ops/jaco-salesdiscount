@@ -564,6 +564,24 @@ public sealed class SalesDiscountController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Nudge(long id)
+    {
+        var model = await db.SalesDiscountRequests.FindAsync(id);
+        if (model is null) return NotFound();
+
+        if (string.IsNullOrWhiteSpace(model.ApprovalWorkflowNo))
+        {
+            TempData["Error"] = "This request has not been submitted for approval yet.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var (ok, message) = await approvalApi.NudgeAsync(model.ApprovalWorkflowNo, new ApprovalNudgeRequest(model.CreatorUserName));
+        TempData[ok ? "Success" : "Error"] = message;
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Withdraw(long id, string? reason)
     {
         var model = await db.SalesDiscountRequests.FindAsync(id);

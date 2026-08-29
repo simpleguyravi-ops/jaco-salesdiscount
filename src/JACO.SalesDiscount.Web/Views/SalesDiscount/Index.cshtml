@@ -35,22 +35,22 @@
 </div>
 
 <div class="jaco-stat-grid">
-    <div class="jaco-card jaco-stat-card">
+    <a class="jaco-card jaco-stat-card @(string.IsNullOrEmpty(Model.Status) ? "jaco-stat-active" : "")" style="text-decoration:none;" href="/SalesDiscount?status=&branch=@Model.Branch&search=@Model.Search">
         <div class="jaco-stat-icon" style="background:var(--jaco-info-bg);color:var(--jaco-info);"><span class="jaco-icon jaco-icon-docs"></span></div>
         <div><div class="jaco-stat-value">@Model.TotalCount</div><div class="jaco-stat-label">Total</div></div>
-    </div>
-    <div class="jaco-card jaco-stat-card">
+    </a>
+    <a class="jaco-card jaco-stat-card @(Model.Status == "Draft" ? "jaco-stat-active" : "")" style="text-decoration:none;" href="/SalesDiscount?status=Draft&branch=@Model.Branch&search=@Model.Search">
         <div class="jaco-stat-icon" style="background:#eef0f3;color:var(--jaco-text-muted);"><span class="jaco-icon jaco-icon-edit"></span></div>
         <div><div class="jaco-stat-value">@Model.DraftCount</div><div class="jaco-stat-label">Draft</div></div>
-    </div>
-    <div class="jaco-card jaco-stat-card">
+    </a>
+    <a class="jaco-card jaco-stat-card @(Model.Status == "Pending Approval" ? "jaco-stat-active" : "")" style="text-decoration:none;" href="/SalesDiscount?status=Pending Approval&branch=@Model.Branch&search=@Model.Search">
         <div class="jaco-stat-icon" style="background:var(--jaco-warning-bg);color:var(--jaco-warning);"><span class="jaco-icon jaco-icon-clock"></span></div>
         <div><div class="jaco-stat-value">@Model.PendingApprovalCount</div><div class="jaco-stat-label">Pending Approval</div></div>
-    </div>
-    <div class="jaco-card jaco-stat-card">
+    </a>
+    <a class="jaco-card jaco-stat-card @(Model.Status == "Completed" ? "jaco-stat-active" : "")" style="text-decoration:none;" href="/SalesDiscount?status=Completed&branch=@Model.Branch&search=@Model.Search">
         <div class="jaco-stat-icon" style="background:var(--jaco-success-bg);color:var(--jaco-success);"><span class="jaco-icon jaco-icon-check-circle"></span></div>
         <div><div class="jaco-stat-value">@Model.CompletedCount</div><div class="jaco-stat-label">Completed</div></div>
-    </div>
+    </a>
 </div>
 
 <form method="get" action="/SalesDiscount" style="display:flex;gap:12px;margin-bottom:14px;align-items:center;">

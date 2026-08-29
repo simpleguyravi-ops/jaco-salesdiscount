@@ -2,3 +2,10 @@ bin/
 obj/
 .vs/
 App_Data/
+
+# Real config (connection string, the shared internal API key) lives here locally on each
+# deployed machine -- never committed. Copy appsettings.example.json to appsettings.json
+# and fill in real values.
+appsettings.json
+appsettings.*.json
+!appsettings.example.json

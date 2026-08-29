@@ -35,6 +35,11 @@
         }
         @if (Model.Status == "Pending Approval" && Model.CreatorUserName == User.Identity!.Name)
         {
+            <form method="post" action="/SalesDiscount/Nudge" style="display:inline;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="jaco-btn jaco-btn-warning" title="Send a reminder to the current approver(s)"><span class="jaco-icon jaco-icon-broadcast"></span> Nudge Approver</button>
+            </form>
             <form method="post" action="/SalesDiscount/Withdraw" onsubmit="return confirm('Withdraw this request? The approval workflow will be cancelled.');">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
