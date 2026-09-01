@@ -7,6 +7,13 @@
     var department = User.FindFirst("Department")?.Value;
     var initials = string.Concat(displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0])).ToUpperInvariant();
     var portalHomeUrl = Configuration["SharedAuth:PortalHomeUrl"] ?? "http://localhost:5010/";
+    // Set once, platform-wide, via Portal's Account/SetTheme (the only app that owns the
+    // Users table) -- carried here as a claim in the same shared SSO cookie every JACO app
+    // already reads, so switching it in any one app applies to all of them immediately.
+    var theme = User.FindFirst("Theme")?.Value == "fiori" ? "fiori" : "orange";
+    var themeSuffix = theme == "fiori" ? ".fiori" : "";
+    var currentUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}{Context.Request.Path}{Context.Request.QueryString}";
+    var setThemeUrl = $"{portalHomeUrl.TrimEnd('/')}/Account/SetTheme?theme={(theme == "fiori" ? "orange" : "fiori")}&returnUrl={Uri.EscapeDataString(currentUrl)}";
 }
 <!doctype html>
 <html lang="en">
@@ -14,8 +21,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] - JACO Sales Discount</title>
-    <link rel="stylesheet" href="~/css/jaco-design-system.css" />
-    <link rel="stylesheet" href="~/css/jaco.css" />
+    <link rel="stylesheet" href="~/css/jaco-design-system@(themeSuffix).css" />
+    <link rel="stylesheet" href="~/css/jaco@(themeSuffix).css" />
 </head>
 <body>
     <div class="jaco-shell">
@@ -29,6 +36,9 @@
                 <div class="who">
                     <div class="name">@displayName</div>
                     <div class="role">@(isAdmin ? "Administrator" : "Sales Consultant")@(string.IsNullOrEmpty(department) ? "" : " · " + department)</div>
+                    <a class="jaco-theme-link" href="@setThemeUrl" title="Switch the platform theme (applies to every JACO app)">
+                        <span class="jaco-icon jaco-icon-settings"></span> @(theme == "fiori" ? "Fiori theme" : "Orange theme")
+                    </a>
                 </div>
                 <div class="jaco-avatar">@initials</div>
             </div>
