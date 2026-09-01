@@ -162,14 +162,18 @@ a { color: inherit; text-decoration: none; }
 .jaco-btn-warning:hover { background: var(--jaco-warning); border-color: var(--jaco-warning); color: #fff; }
 .jaco-btn-sm { padding: 5px 12px; font-size: 12.5px; }
 
-/* Fiori "Object Status": a small colored dot + text rather than a filled pill */
-.jaco-badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: var(--jaco-radius-sm); font-size: 12px; font-weight: 600; letter-spacing: 0; background: transparent !important; }
+/* Fiori "Object Status": a small colored dot + a light tinted background. A pure
+   dot-and-text treatment (no background) reads fine for the semantic colors, but a
+   "neutral" status (e.g. Draft) then has no visual distinction from ordinary body text at
+   all -- it needs its own light chip, same as every other variant, to still read as a
+   status badge rather than looking like the color-coding is simply missing. */
+.jaco-badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: var(--jaco-radius-sm); font-size: 12px; font-weight: 600; letter-spacing: 0; }
 .jaco-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-.jaco-badge-success { color: var(--jaco-success); }
-.jaco-badge-warning { color: var(--jaco-warning); }
-.jaco-badge-danger { color: var(--jaco-danger); }
-.jaco-badge-info { color: var(--jaco-info); }
-.jaco-badge-neutral { color: var(--jaco-text-muted); }
+.jaco-badge-success { color: var(--jaco-success); background: var(--jaco-success-bg); }
+.jaco-badge-warning { color: var(--jaco-warning); background: var(--jaco-warning-bg); }
+.jaco-badge-danger { color: var(--jaco-danger); background: var(--jaco-danger-bg); }
+.jaco-badge-info { color: var(--jaco-info); background: var(--jaco-info-bg); }
+.jaco-badge-neutral { color: var(--jaco-text-muted); background: #EFF1F3; }
 
 .jaco-form-group { margin-bottom: 16px; }
 .jaco-form-group label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: var(--jaco-text-muted); }
